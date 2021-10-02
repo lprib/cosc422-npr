@@ -1,0 +1,14 @@
+IndentWidth: 4
+ColumnLimit: 100
+DerivePointerAlignment: false
+PointerAlignment: Left
+AlignAfterOpenBracket: AlwaysBreak
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false
+IndentPPDirectives: BeforeHash
+AlignEscapedNewlines: Left
+
+# Braces on the same line, except for functions
+BreakBeforeBraces: Linux
+
+SortIncludes: false
