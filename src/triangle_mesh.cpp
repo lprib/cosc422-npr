@@ -61,7 +61,7 @@ void mesh_init(const char* filename)
     float* vert_positions = new float[num_verts * 3];
     float* vert_norms = new float[num_verts * 3];
     num_Elems = num_faces * 3;
-    short* elems = new short[num_Elems]; // Asumption: Triangle mesh
+    short* elems = new short[num_Elems];
 
     if (!mesh.has_vertex_normals()) {
         mesh.request_face_normals();
