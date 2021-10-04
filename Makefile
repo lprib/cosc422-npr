@@ -5,17 +5,20 @@ SRC = src
 SRCS = $(wildcard $(SRC)/*.cpp)
 OBJS = $(SRCS:$(SRC)/%.cpp=$(OUT)/%.o)
 
+all: $(TARGET)
+
 $(TARGET): $(OBJS)
 	g++ -o $@ $(CFLAGS) $^
 
-$(OBJS): $(OUT)/%.o : $(SRC)/%.cpp setup_dirs
+$(OUT)/%.o : $(SRC)/%.cpp | $(OUT)
 	g++ $(CFLAGS) -c $< -o $@
 
-setup_dirs:
-	mkdir -p $(OUT)
+$(OUT):
+	mkdir $(OUT)
 
 clean:
 	rm -rf out
 	rm main
 
-.PHONY: setup_dirs
+.DEFAULT: all
+.PHONY: all

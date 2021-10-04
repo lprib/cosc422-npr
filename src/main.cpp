@@ -63,7 +63,12 @@ void initialize()
     OpenMesh::Vec3f box = {xmax - xc, ymax - yc, zmax - zc};
     modelScale = 1.0 / box.max();
 
-    GLint program = compile_program("src/mesh.vert", "src/mesh.frag", NULL, NULL, NULL);
+    GLint program = compile_program(
+        "src/shaders/0_mesh.vert",
+        "src/shaders/2_mesh.frag",
+        NULL,
+        NULL,
+        "src/shaders/1_mesh.geom");
     glUseProgram(program);
 
     //==============Get vertex, normal data from mesh=========
@@ -227,7 +232,7 @@ int main(int argc, char** argv)
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(600, 600);
     glutInitWindowPosition(10, 10);
-    glutCreateWindow("Mesh Viewer (OpenMesh)");
+    glutCreateWindow("COSC422 Assignment 2");
     glutInitContextVersion(4, 2);
     glutInitContextProfile(GLUT_CORE_PROFILE);
 
