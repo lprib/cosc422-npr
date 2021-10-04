@@ -10,6 +10,8 @@ uniform vec4 light_pos;
  
 out VERTEX_DATA {
 	float diffuse;
+	vec3 world_pos;
+	vec3 mv_normal;
 } vertex;
 
 void main() {
@@ -18,6 +20,8 @@ void main() {
 	vec3 light_vec = normalize(light_pos.xyz - mv_position.xyz); 
 
 	vertex.diffuse = max(dot(light_vec, mv_normal), 0.2);
+	vertex.world_pos = position;
+	vertex.mv_normal = mv_normal;
 
 	gl_Position = mvp_matrix * vec4(position, 1);
 }

@@ -1,4 +1,5 @@
 #include "triangle_mesh.h"
+#include "shaders.h"
 
 #define _USE_MATH_DEFINES
 #include <GL/glew.h>
@@ -10,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <cmath>
-#include "shaders.h"
+#include <cassert>
 
 typedef OpenMesh::TriMesh_ArrayKernelT<> TriangleMesh;
 static TriangleMesh mesh;
@@ -22,6 +23,8 @@ static glm::mat4 view, projView;
 static int num_Elems;
 static bool wireframe = false;
 static const float DEG_TO_RAD = M_PI / 180.0f;
+// GL_TRIANGLES_ADJACENCY, so there are 6 elements (vertices) per face
+static const int ELEMS_PER_FACE = 6;
 
 #define UNIFORMS X(mvp_matrix) X(mv_matrix) X(normal_matrix) X(light_pos) X(is_wireframe)
 #define X(name) GLuint name##_uniform;
@@ -60,7 +63,7 @@ void mesh_init(const char* filename)
     int num_faces = mesh.n_faces();
     float* vert_positions = new float[num_verts * 3];
     float* vert_norms = new float[num_verts * 3];
-    num_Elems = num_faces * 3;
+    num_Elems = num_faces * ELEMS_PER_FACE;
     short* elems = new short[num_Elems];
 
     if (!mesh.has_vertex_normals()) {
@@ -85,17 +88,47 @@ void mesh_init(const char* filename)
     }
 
     // Use a face iterator to get the vertex indices for each face
-    index = 0;
+    int face_index = 0;
     for (TriangleMesh::FaceIter face_iter = mesh.faces_begin(); face_iter != mesh.faces_end();
          face_iter++) {
+
         OpenMesh::FaceHandle face_handle = *face_iter;
-        for (TriangleMesh::FaceVertexIter face_vertex_iter = mesh.fv_iter(face_handle);
+
+        int face_vertex_index = 0;
+        for (TriangleMesh::FaceVertexCCWIter face_vertex_iter = mesh.fv_ccwiter(face_handle);
              face_vertex_iter.is_valid();
              face_vertex_iter++) {
-            OpenMesh::VertexHandle vertex_handle = *face_vertex_iter; // Vertex handle
-            elems[index] = vertex_handle.idx();
-            index++;
+
+            OpenMesh::VertexHandle vertex_handle = *face_vertex_iter;
+            elems[face_index + face_vertex_index] = vertex_handle.idx();
+            // skip two because the adjacent face vertices will be interlaced
+            face_vertex_index += 2;
         }
+        // there should only be three vertices per face (indices 0, 2, 4)
+        assert(face_vertex_index == 6);
+
+        // idea: iterate over adjacent faces, along with edges of current face.
+        // Find vertex that is not part of the edge on the adjacent face, which
+        // will be the adjacent vertex
+        // int face_adj_vertex_index = 1;
+        // for (TriangleMesh::FaceFaceCCWIter adj_face_iter = mesh.ff_ccwiter(face_handle);
+        //      adj_face_iter.is_valid();
+        //      adj_face_iter++) {
+        //     OpenMesh::FaceHandle adj_face_handle = *face_iter;
+        // }
+
+        int adj_face_vertex_index = 1;
+        for (TriangleMesh::FaceHalfedgeCCWIter adj_half_edge_iter = mesh.fh_ccwiter(face_handle);
+             adj_half_edge_iter.is_valid();
+             adj_half_edge_iter++) {
+            OpenMesh::HalfedgeHandle half_edge_handle = *adj_half_edge_iter;
+            OpenMesh::VertexHandle adj_vertex_handle = mesh.opposite_he_opposite_vh(half_edge_handle);
+            elems[face_index + adj_face_vertex_index] = adj_vertex_handle.idx();
+            adj_face_vertex_index += 2;
+        }
+        assert(adj_face_vertex_index == 7);
+
+        face_index += ELEMS_PER_FACE;
     }
 
     mesh.release_vertex_normals();
@@ -118,7 +151,11 @@ void mesh_init(const char* filename)
     glEnableVertexAttribArray(1); // Vertex normal
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID[2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(short) * num_faces * 3, elems, GL_STATIC_DRAW);
+    glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        sizeof(short) * num_faces * ELEMS_PER_FACE,
+        elems,
+        GL_STATIC_DRAW);
 
     glBindVertexArray(0);
 
@@ -170,7 +207,7 @@ void mesh_display()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindVertexArray(vaoID);
-    glDrawElements(GL_TRIANGLES, num_Elems, GL_UNSIGNED_SHORT, NULL);
+    glDrawElements(GL_TRIANGLES_ADJACENCY, num_Elems, GL_UNSIGNED_SHORT, NULL);
 
     glFlush();
 }
@@ -192,6 +229,11 @@ void mesh_keyboard(unsigned char key)
 {
     if (key == 'w')
         wireframe = !wireframe;
+    else if (key == '=')
+        modelScale *= 1.1;
+    else if (key == '-')
+        modelScale /= 1.1;
+
     if (wireframe)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else
