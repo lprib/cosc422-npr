@@ -1,11 +1,14 @@
+MAKEFLAGS += -j4
+
 TARGET = main
-CFLAGS = -lOpenMeshCore -lOpenMeshTools -lGL -lGLU -lGLEW -lglut -lm -Wall
+CFLAGS = -lOpenMeshCore -lOpenMeshTools -lGL -lGLU -lGLEW -lglut -lm -Wall -Og
 OUT = out
 SRC = src
 SRCS = $(wildcard $(SRC)/*.cpp)
 OBJS = $(SRCS:$(SRC)/%.cpp=$(OUT)/%.o)
 
-all: $(TARGET)
+run: $(TARGET)
+	./$(TARGET)
 
 $(TARGET): $(OBJS)
 	g++ -o $@ $(CFLAGS) $^
@@ -20,5 +23,5 @@ clean:
 	rm -rf out
 	rm main
 
-.DEFAULT: all
-.PHONY: all
+.DEFAULT: run
+.PHONY: run

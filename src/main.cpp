@@ -1,44 +1,20 @@
 #include "triangle_mesh.h"
 
-#define _USE_MATH_DEFINES // for C++
+#define _USE_MATH_DEFINES
 #include <GL/glew.h>
-
 #include <GL/freeglut.h>
-#include <OpenMesh/Core/IO/MeshIO.hh>
-#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
-#include <cmath>
-#include <fstream>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include "shaders.h"
 using namespace std;
 
-
-
-// Initialisation function for OpenMesh, shaders and OpenGL
-void initialize()
-{
-    mesh_init("Homer.off");
-}
-
 // Callback function for special keyboard events
-void special(int key, int x, int y)
-{
-    mesh_special(key);
-}
+void special(int key, int x, int y) { mesh_special(key); }
 
 // Callback function for keyboard events
-void keyboard(unsigned char key, int x, int y)
-{
-    mesh_keyboard(key);
-}
+void keyboard(unsigned char key, int x, int y) { mesh_keyboard(key); }
 
 // The main display callback function
-void display()
-{
-    mesh_display();
-}
+void display() { mesh_display(); }
 
 int main(int argc, char** argv)
 {
@@ -58,7 +34,7 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    mesh_init("Homer.off");
+    mesh_init("assets/Homer.off");
     glutDisplayFunc(display);
     glutSpecialFunc(special);
     glutKeyboardFunc(keyboard);
