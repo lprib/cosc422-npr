@@ -34,7 +34,7 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    mesh_init("assets/Homer.off");
+    mesh_init("assets/Camel.off");
     glutDisplayFunc(display);
     glutSpecialFunc(special);
     glutKeyboardFunc(keyboard);
