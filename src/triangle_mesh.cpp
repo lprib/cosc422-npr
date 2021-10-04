@@ -18,11 +18,15 @@ static float modelScale;
 static float xc, yc, zc;
 static float rotn_x = 0.0, rotn_y = 0.0;
 static GLuint vaoID;
-static GLuint mvpMatrixLoc, mvMatrixLoc, norMatrixLoc, lgtLoc, wireLoc;
 static glm::mat4 view, projView;
 static int num_Elems;
 static bool wireframe = false;
 static const float DEG_TO_RAD = M_PI / 180.0f;
+
+#define UNIFORMS X(mvp_matrix) X(mv_matrix) X(normal_matrix) X(light_pos) X(is_wireframe)
+#define X(name) GLuint name##_uniform;
+UNIFORMS
+#undef X
 
 static void
 getBoundingBox(float* xmin, float* xmax, float* ymin, float* ymax, float* zmin, float* zmax);
@@ -67,7 +71,9 @@ void mesh_init(const char* filename)
 
     // Use a vertex iterator to get vertex positions and vertex normal vectors
     int index = 0;
-    for (TriangleMesh::VertexIter vertex_iter = mesh.vertices_begin(); vertex_iter != mesh.vertices_end(); vertex_iter++) {
+    for (TriangleMesh::VertexIter vertex_iter = mesh.vertices_begin();
+         vertex_iter != mesh.vertices_end();
+         vertex_iter++) {
         OpenMesh::VertexHandle vertex_handle = *vertex_iter; // Vertex handle
         TriangleMesh::Point pos = mesh.point(vertex_handle);
         TriangleMesh::Normal norm = mesh.normal(vertex_handle);
@@ -80,9 +86,12 @@ void mesh_init(const char* filename)
 
     // Use a face iterator to get the vertex indices for each face
     index = 0;
-    for (TriangleMesh::FaceIter face_iter = mesh.faces_begin(); face_iter != mesh.faces_end(); face_iter++) {
+    for (TriangleMesh::FaceIter face_iter = mesh.faces_begin(); face_iter != mesh.faces_end();
+         face_iter++) {
         OpenMesh::FaceHandle face_handle = *face_iter;
-        for (TriangleMesh::FaceVertexIter face_vertex_iter = mesh.fv_iter(face_handle); face_vertex_iter.is_valid(); face_vertex_iter++) {
+        for (TriangleMesh::FaceVertexIter face_vertex_iter = mesh.fv_iter(face_handle);
+             face_vertex_iter.is_valid();
+             face_vertex_iter++) {
             OpenMesh::VertexHandle vertex_handle = *face_vertex_iter; // Vertex handle
             elems[index] = vertex_handle.idx();
             index++;
@@ -113,12 +122,11 @@ void mesh_init(const char* filename)
 
     glBindVertexArray(0);
 
-    //============== Create uniform variables ==============
-    mvpMatrixLoc = glGetUniformLocation(program, "mvpMatrix");
-    mvMatrixLoc = glGetUniformLocation(program, "mvMatrix");
-    norMatrixLoc = glGetUniformLocation(program, "norMatrix");
-    wireLoc = glGetUniformLocation(program, "wireMode");
-    lgtLoc = glGetUniformLocation(program, "lightPos");
+    // Bind uniforms
+#define X(name) name##_uniform = glGetUniformLocation(program, #name);
+    UNIFORMS
+#undef X
+
     glm::vec4 light = glm::vec4(5.0, 5.0, 10.0, 1.0);
     glm::mat4 proj;
     proj = glm::perspective(60.0f * DEG_TO_RAD, 1.0f, 2.0f, 10.0f);
@@ -128,7 +136,7 @@ void mesh_init(const char* filename)
         glm::vec3(0.0, 1.0, 0.0)); // view matrix
     projView = proj * view;
     glm::vec4 lightEye = view * light;
-    glUniform4fv(lgtLoc, 1, &lightEye[0]);
+    glUniform4fv(light_pos_uniform, 1, &lightEye[0]);
 
     //============== Initialize OpenGL state ==============
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -146,19 +154,18 @@ void mesh_display()
     matrix = glm::translate(matrix, glm::vec3(-xc, -yc, -zc));
 
     glm::mat4 viewMatrix = view * matrix; // The model-view matrix
-    glUniformMatrix4fv(mvMatrixLoc, 1, GL_FALSE, &viewMatrix[0][0]);
+    glUniformMatrix4fv(mv_matrix_uniform, 1, GL_FALSE, &viewMatrix[0][0]);
 
     glm::mat4 prodMatrix = projView * matrix; // The model-view-projection matrix
-    glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &prodMatrix[0][0]);
+    glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, &prodMatrix[0][0]);
 
-    glm::mat4 invMatrix = glm::inverse(viewMatrix); // Inverse of model-view
-                                                    // matrix
-    glUniformMatrix4fv(norMatrixLoc, 1, GL_TRUE, &invMatrix[0][0]);
+    glm::mat4 invMatrix = glm::inverse(viewMatrix); // Inverse of model-view matrix
+    glUniformMatrix4fv(normal_matrix_uniform, 1, GL_TRUE, &invMatrix[0][0]);
 
     if (wireframe)
-        glUniform1i(wireLoc, 1);
+        glUniform1i(is_wireframe_uniform, 1);
     else
-        glUniform1i(wireLoc, 0);
+        glUniform1i(is_wireframe_uniform, 0);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -203,7 +210,8 @@ getBoundingBox(float* xmin, float* xmax, float* ymin, float* ymax, float* zmin, 
     pmin = pmax = mesh.point(*vertex_iter);
 
     // Iterate over the mesh using a vertex iterator
-    for (vertex_iter = mesh.vertices_begin() + 1; vertex_iter != mesh.vertices_end(); vertex_iter++) {
+    for (vertex_iter = mesh.vertices_begin() + 1; vertex_iter != mesh.vertices_end();
+         vertex_iter++) {
         pmin.minimize(mesh.point(*vertex_iter));
         pmax.maximize(mesh.point(*vertex_iter));
     }

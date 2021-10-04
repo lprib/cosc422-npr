@@ -1,15 +1,17 @@
 #version 400
 
-uniform int wireMode;
+uniform int is_wireframe;
 
 in FRAG_DATA {
-    smooth float diffTerm;
+    smooth float diffuse;
 } frag;
 
 void main() 
 {
-   if(wireMode == 1)    //Wireframe
-       gl_FragColor = vec4(0, 0, 1, 1);
-   else			//Fill + lighting
-       gl_FragColor = frag.diffTerm * vec4(0, 1, 1, 1);
+    if(is_wireframe == 1) {
+        gl_FragColor = vec4(0, 0, 1, 1);
+    }
+    else {
+        gl_FragColor = frag.diffuse * vec4(0, 1, 1, 1);
+    }
 }

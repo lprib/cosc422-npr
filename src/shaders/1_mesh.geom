@@ -4,16 +4,16 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 
 in VERTEX_DATA {
-    float diffTerm;
+    float diffuse;
 } verts[];
 
 out FRAG_DATA {
-    smooth float diffTerm;
+    smooth float diffuse;
 } frag;
 
 void main() {
     for(int i = 0; i < gl_in.length(); i++) {
-        frag.diffTerm = verts[i].diffTerm;
+        frag.diffuse = verts[i].diffuse;
         gl_Position = gl_in[i].gl_Position;
         EmitVertex();
     }
